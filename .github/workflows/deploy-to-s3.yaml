@@ -28,12 +28,12 @@ jobs:
       - name: Terraform Plan
         run: terraform plan -out=tfplan
 
-      # - name: Run Security Scan (tfsec)
-      #   run: |
-      #     wget https://github.com/aquasecurity/tfsec/releases/latest/download/tfsec-linux-amd64 -O tfsec
-      #     chmod +x tfsec
-      #     sudo mv tfsec /usr/local/bin/
-      #     tfsec .
+      - name: Run Security Scan (tfsec)
+        run: |
+          wget https://github.com/aquasecurity/tfsec/releases/latest/download/tfsec-linux-amd64 -O tfsec
+          chmod +x tfsec
+          sudo mv tfsec /usr/local/bin/
+          tfsec .
 
       - name: Terraform Apply
         run: terraform apply -auto-approve tfplan
