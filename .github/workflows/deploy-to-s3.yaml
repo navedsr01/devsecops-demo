@@ -1,4 +1,4 @@
-name: DevSecOps - Deploy S3
+name: DevSecOps - Secure S3 Deployment
 
 on:
   push:
@@ -39,4 +39,4 @@ jobs:
         run: terraform apply -auto-approve tfplan
 
       - name: Verify S3 Bucket and File
-        run: aws s3 ls s3://github-actions-bucket-12345/
+        run: aws s3 ls s3://github-actions-secure-bucket/
