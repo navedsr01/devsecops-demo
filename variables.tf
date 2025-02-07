@@ -5,5 +5,5 @@ variable "aws_region" {
 
 variable "bucket_name" {
   type    = string
-  default = "github-actions-bucket-12345"
+  default = "github-actions-secure-bucket"
 }
