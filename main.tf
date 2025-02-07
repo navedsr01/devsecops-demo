@@ -2,9 +2,14 @@ provider "aws" {
   region = var.aws_region
 }
 
+# Check if the alias already exists
+data "aws_kms_alias" "existing_kms_key" {
+  name = "alias/s3-encryption-key"
+}
+
 # ✅ Step 1: Create a KMS Key for S3 Encryption (Fixes HIGH #1, #7)
 resource "aws_kms_key" "s3_kms_key" {
-  description = "KMS key for S3 bucket encryption"
+  description             = "KMS key for S3 bucket encryption"
   deletion_window_in_days = 10
 }
 
@@ -18,9 +23,10 @@ resource "aws_kms_alias" "s3_kms_key_alias" {
   }
 }
 
-# Check if the alias already exists
-data "aws_kms_alias" "existing_kms_key" {
-  name = "alias/s3-encryption-key"
+resource "aws_kms_alias" "s3_kms_key_alias" {
+  count        = length(data.aws_kms_alias.existing_kms_key.id) == 0 ? 1 : 0
+  name         = "alias/s3-encryption-key"
+  target_key_id = aws_kms_key.s3_kms_key.id
 }
 
 # ✅ Step 2: Create a Secure S3 Bucket
