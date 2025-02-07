@@ -8,14 +8,24 @@ resource "aws_kms_key" "s3_kms_key" {
   deletion_window_in_days = 10
 }
 
+# Create alias only if it does not exist
 resource "aws_kms_alias" "s3_kms_key_alias" {
   name          = "alias/s3-encryption-key"
   target_key_id = aws_kms_key.s3_kms_key.id
+
+  lifecycle {
+    ignore_changes = [name]
+  }
+}
+
+# Check if the alias already exists
+data "aws_kms_alias" "existing_kms_key" {
+  name = "alias/s3-encryption-key"
 }
 
 # ✅ Step 2: Create a Secure S3 Bucket
 resource "aws_s3_bucket" "github_bucket" {
-  bucket = var.bucket_name
+  bucket = "${var.bucket_name}-${var.random_suffix}"
 }
 
 # ✅ Step 3: Block Public Access (Fixes HIGH #2, #3, #5, #6 & LOW #10)
@@ -41,7 +51,7 @@ resource "aws_s3_bucket_server_side_encryption_configuration" "encryption" {
 
 # ✅ Step 5: Enable S3 Logging (Fixes MEDIUM #8)
 resource "aws_s3_bucket" "logging_bucket" {
-  bucket = "${var.bucket_name}-logs"
+  bucket = "${var.bucket_name}-logs-${var.random_suffix}"
 }
 
 resource "aws_s3_bucket_logging" "logging" {
