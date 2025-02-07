@@ -60,9 +60,9 @@ resource "aws_s3_bucket_versioning" "versioning" {
 
 # ✅ Step 7: Upload a Test File to the Bucket
 resource "aws_s3_bucket_object" "upload_file" {
-  bucket = aws_s3_bucket.github_bucket.id
-  key    = "test.txt"
-  source = "test.txt"
+  bucket                 = aws_s3_bucket.github_bucket.id
+  key                    = "test.txt"
+  source                 = "test.txt"
   server_side_encryption = "aws:kms"
-  kms_key_id = aws_kms_key.s3_kms_key.id
+  kms_key_id             = aws_kms_key.s3_kms_key.id
 }
