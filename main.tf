@@ -2,39 +2,12 @@ provider "aws" {
   region = var.aws_region
 }
 
-# Check if the alias already exists
-data "aws_kms_alias" "existing_kms_key" {
-  name = "alias/s3-encryption-key"
-}
-
-# ✅ Step 1: Create a KMS Key for S3 Encryption (Fixes HIGH #1, #7)
-resource "aws_kms_key" "s3_kms_key" {
-  description             = "KMS key for S3 bucket encryption"
-  deletion_window_in_days = 10
-}
-
-# Create alias only if it does not exist
-resource "aws_kms_alias" "s3_kms_key_alias" {
-  name          = "alias/s3-encryption-key"
-  target_key_id = aws_kms_key.s3_kms_key.id
-
-  lifecycle {
-    ignore_changes = [name]
-  }
-}
-
-resource "aws_kms_alias" "s3_kms_key_alias" {
-  count        = length(data.aws_kms_alias.existing_kms_key.id) == 0 ? 1 : 0
-  name         = "alias/s3-encryption-key"
-  target_key_id = aws_kms_key.s3_kms_key.id
-}
-
-# ✅ Step 2: Create a Secure S3 Bucket
+# ✅ Create an S3 bucket
 resource "aws_s3_bucket" "github_bucket" {
-  bucket = "${var.bucket_name}-${var.random_suffix}"
+  bucket = var.bucket_name
 }
 
-# ✅ Step 3: Block Public Access (Fixes HIGH #2, #3, #5, #6 & LOW #10)
+# ✅ Block Public Access
 resource "aws_s3_bucket_public_access_block" "public_access" {
   bucket                  = aws_s3_bucket.github_bucket.id
   block_public_acls       = true
@@ -43,21 +16,28 @@ resource "aws_s3_bucket_public_access_block" "public_access" {
   restrict_public_buckets = true
 }
 
-# ✅ Step 4: Enable Default Encryption using KMS Key (Fixes HIGH #1, #4, #7)
+# ✅ Enable Default Encryption (AES256)
 resource "aws_s3_bucket_server_side_encryption_configuration" "encryption" {
   bucket = aws_s3_bucket.github_bucket.id
 
   rule {
     apply_server_side_encryption_by_default {
-      sse_algorithm     = "aws:kms"
-      kms_master_key_id = aws_kms_key.s3_kms_key.id
+      sse_algorithm = "AES256"
     }
   }
 }
 
-# ✅ Step 5: Enable S3 Logging (Fixes MEDIUM #8)
+# ✅ Enable S3 Bucket Versioning
+resource "aws_s3_bucket_versioning" "versioning" {
+  bucket = aws_s3_bucket.github_bucket.id
+  versioning_configuration {
+    status = "Enabled"
+  }
+}
+
+# ✅ Enable S3 Logging (Using a separate log bucket)
 resource "aws_s3_bucket" "logging_bucket" {
-  bucket = "${var.bucket_name}-logs-${var.random_suffix}"
+  bucket = "${var.bucket_name}-logs"
 }
 
 resource "aws_s3_bucket_logging" "logging" {
@@ -66,20 +46,11 @@ resource "aws_s3_bucket_logging" "logging" {
   target_prefix = "logs/"
 }
 
-# ✅ Step 6: Enable S3 Versioning (Fixes MEDIUM #9)
-resource "aws_s3_bucket_versioning" "versioning" {
-  bucket = aws_s3_bucket.github_bucket.id
-  versioning_configuration {
-    status = "Enabled"
-  }
-}
-
-# ✅ Step 7: Upload a Test File to the Bucket
+# ✅ Upload a Test File to S3
 resource "aws_s3_object" "upload_file" {
   bucket                 = aws_s3_bucket.github_bucket.id
   key                    = "test.txt"
   source                 = "test.txt"
-  server_side_encryption = "aws:kms"
-  kms_key_id             = aws_kms_key.s3_kms_key.arn  # FIX: Use 'arn' instead of 'id'
   content_type           = "text/plain"
+  server_side_encryption = "AES256"
 }
