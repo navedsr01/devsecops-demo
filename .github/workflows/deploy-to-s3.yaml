@@ -12,15 +12,11 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v3
 
-      - name: Install Gitleaks
-        run: |
-          wget -q https://github.com/gitleaks/gitleaks/releases/latest/download/gitleaks-linux-amd64 -O gitleaks
-          chmod +x gitleaks
-          sudo mv gitleaks /usr/local/bin/
-
-      - name: Run Security Scan on Source Folder
-        run: |
-          gitleaks detect --source=source --verbose --redact || exit 1
+      - name: Scan for Secrets with TruffleHog
+        uses: trufflesecurity/trufflehog@v3
+        with:
+          path: "source"  # ✅ Scan only the `source/` folder
+          base: "main"  # ✅ Compare changes against `main` branch
 
   manual_approval:
     runs-on: ubuntu-latest
