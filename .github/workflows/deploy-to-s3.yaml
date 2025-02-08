@@ -13,10 +13,9 @@ jobs:
         uses: actions/checkout@v3
 
       - name: Scan for Secrets with TruffleHog
-        uses: trufflesecurity/trufflehog@v3
+        uses: trufflesecurity/trufflehog-actions-scan@v2
         with:
-          path: "source"  # ✅ Scan only the `source/` folder
-          base: "main"  # ✅ Compare changes against `main` branch
+          scanArguments: "--path source --fail"
 
   manual_approval:
     runs-on: ubuntu-latest
