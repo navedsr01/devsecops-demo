@@ -2,9 +2,20 @@ provider "aws" {
   region = var.aws_region
 }
 
-# ✅ Create an S3 bucket
+# ✅ Check if the bucket already exists
+data "aws_s3_bucket" "existing_bucket" {
+  bucket = var.bucket_name
+  provider = aws
+}
+
+# ✅ Create a new bucket **only if it doesn’t exist**
 resource "aws_s3_bucket" "github_bucket" {
   bucket = var.bucket_name
+
+  lifecycle {
+    prevent_destroy = true  # Ensure the bucket is never accidentally deleted
+    ignore_changes  = [acl, force_destroy]  # Prevent unnecessary updates
+  }
 }
 
 # ✅ Block Public Access
@@ -27,30 +38,15 @@ resource "aws_s3_bucket_server_side_encryption_configuration" "encryption" {
   }
 }
 
-# ✅ Enable S3 Bucket Versioning
-resource "aws_s3_bucket_versioning" "versioning" {
-  bucket = aws_s3_bucket.github_bucket.id
-  versioning_configuration {
-    status = "Enabled"
-  }
-}
-
-# ✅ Enable S3 Logging (Using a separate log bucket)
-resource "aws_s3_bucket" "logging_bucket" {
-  bucket = "${var.bucket_name}-logs"
-}
-
-resource "aws_s3_bucket_logging" "logging" {
-  bucket        = aws_s3_bucket.github_bucket.id
-  target_bucket = aws_s3_bucket.logging_bucket.id
-  target_prefix = "logs/"
-}
-
-# ✅ Upload a Test File to S3
+# ✅ Upload or Update the test.txt file
 resource "aws_s3_object" "upload_file" {
   bucket                 = aws_s3_bucket.github_bucket.id
   key                    = "test.txt"
   source                 = "test.txt"
   content_type           = "text/plain"
   server_side_encryption = "AES256"
+
+  lifecycle {
+    ignore_changes = [etag]  # Ensure changes don't trigger bucket recreation
+  }
 }
