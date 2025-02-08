@@ -14,7 +14,7 @@ resource "aws_s3_bucket" "github_bucket" {
 
   lifecycle {
     prevent_destroy = true  # Avoid accidental deletions
-    ignore_changes  = [acl, force_destroy]  # Ignore minor changes to avoid recreation
+    ignore_changes  = [force_destroy]  # Remove deprecated acl
   }
 }
 
