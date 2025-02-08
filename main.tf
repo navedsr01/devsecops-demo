@@ -18,34 +18,13 @@ resource "aws_s3_bucket" "github_bucket" {
   }
 }
 
-# ✅ Block Public Access
-resource "aws_s3_bucket_public_access_block" "public_access" {
-  count  = length(data.aws_s3_bucket.existing_bucket.id) > 0 ? 0 : 1
-  bucket = var.bucket_name
+# ✅ Upload all files from `source/` to S3 using for_each
+resource "aws_s3_object" "upload_files" {
+  for_each = fileset("${path.module}/source", "**")
 
-  block_public_acls       = true
-  block_public_policy     = true
-  ignore_public_acls      = true
-  restrict_public_buckets = true
-}
-
-# ✅ Enable Default Encryption (AES256)
-resource "aws_s3_bucket_server_side_encryption_configuration" "encryption" {
-  count  = length(data.aws_s3_bucket.existing_bucket.id) > 0 ? 0 : 1
-  bucket = var.bucket_name
-
-  rule {
-    apply_server_side_encryption_by_default {
-      sse_algorithm = "AES256"
-    }
-  }
-}
-
-# ✅ Upload or Update the `test.txt` file
-resource "aws_s3_object" "upload_file" {
   bucket                 = var.bucket_name
-  key                    = "test.txt"
-  source                 = "test.txt"
+  key                    = each.value
+  source                 = "${path.module}/source/${each.value}"
   content_type           = "text/plain"
   server_side_encryption = "AES256"
 

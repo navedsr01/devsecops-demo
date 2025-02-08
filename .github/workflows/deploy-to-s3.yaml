@@ -1,4 +1,4 @@
-name: DevSecOps - Secure S3 Deployment
+name: Deploy S3 Bucket and Upload Folder
 
 on:
   push:
@@ -28,15 +28,8 @@ jobs:
       - name: Terraform Plan
         run: terraform plan -out=tfplan
 
-      # - name: Run Security Scan (tfsec)
-      #   run: |
-      #     wget https://github.com/aquasecurity/tfsec/releases/latest/download/tfsec-linux-amd64 -O tfsec
-      #     chmod +x tfsec
-      #     sudo mv tfsec /usr/local/bin/
-      #     tfsec .
-
       - name: Terraform Apply
         run: terraform apply -auto-approve tfplan
 
-      - name: Verify S3 Bucket and File
-        run: aws s3 ls s3://github-actions-secure-bucket/
+      - name: Verify S3 Bucket and Files
+        run: aws s3 ls s3://github-actions-secure-bucket/ --recursive
